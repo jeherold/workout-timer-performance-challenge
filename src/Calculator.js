@@ -45,10 +45,14 @@ function Calculator({ workouts, allowSound }) {
     playSound();
   }, [duration, allowSound]);
 
-  /** Closure with the original render snapshot */
+  /** Closure with the original render snapshot
+   *  - if nothing in the dependency array it will be a stale closure
+   *  - any values used in useEffect that are not in the dependency array
+   *    will remain stale and the closure will be considered stale
+   */
   useEffect(() => {
     document.title = `Your ${number}-exercise workout`;
-  });
+  }, [number]);
 
   // convert this to useState ^^
   // const duration = (number * sets * speed) / 60 + (sets - 1) * durationBreak;
