@@ -9,28 +9,47 @@ function Calculator({ workouts, allowSound }) {
 
   const [duration, setDuration] = useState(0);
 
-  const playSound = useCallback(
-    function () {
-      if (!allowSound) return;
-      const sound = new Audio(clickSound);
-      sound.play();
-    },
-    [allowSound]
-  );
+  // const playSound = useCallback(
+  //   function () {
+  //     if (!allowSound) return;
+  //     const sound = new Audio(clickSound);
+  //     sound.play();
+  //   },
+  //   [allowSound]
+  // );
+
+  // Each side effect should only be responsible for one effect.
+  // The firs tis responsible for setting duration
+  // the 2nd is responsible for playing the sound
 
   /** classic example of useEffect to update state on another state update
    *  - not always the best solution (avoid when possible since this runs after the initial
    *    render and updating state will then cause another render) but ok here since otherwise
    *    this logic would be repeated in 4 other event handlers
    */
-  useEffect(
-    function () {
-      setDuration((number * sets * speed) / 60 + (sets - 1) * durationBreak);
+  useEffect(() => {
+    setDuration((number * sets * speed) / 60 + (sets - 1) * durationBreak);
+  }, [number, sets, speed, durationBreak]);
 
-      playSound();
-    },
-    [number, sets, speed, durationBreak, playSound]
-  );
+  /** Better solution to keeping the playSound synchronized with the duration state
+   *  - have the playSound function in here without the useCallback
+   *  - since basically we want to playSound whenever the duration changes
+   */
+  useEffect(() => {
+    const playSound = () => {
+      if (!allowSound) return;
+      const sound = new Audio(clickSound);
+      sound.play();
+    };
+
+    playSound();
+  }, [duration, allowSound]);
+
+  /** Closure with the original render snapshot */
+  useEffect(() => {
+    document.title = `Your ${number}-exercise workout`;
+  });
+
   // convert this to useState ^^
   // const duration = (number * sets * speed) / 60 + (sets - 1) * durationBreak;
   const mins = Math.floor(duration);
@@ -38,12 +57,10 @@ function Calculator({ workouts, allowSound }) {
 
   const handleInc = () => {
     setDuration((duration) => Math.floor(duration + 1));
-    playSound();
   };
 
   const handleDec = () => {
     setDuration((duration) => (duration > 1 ? Math.ceil(duration - 1) : 0));
-    playSound();
   };
 
   return (
